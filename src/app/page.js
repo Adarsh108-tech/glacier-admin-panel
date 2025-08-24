@@ -8,14 +8,13 @@ const BlogManager = () => {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [media, setMedia] = useState(null);
-  const [preview, setPreview] = useState(null); // For preview before upload
+  const [preview, setPreview] = useState(null);
   const [blogs, setBlogs] = useState([]);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [loading, setLoading] = useState(false);
 
-  const backendURL = process.env.NEXT_PUBLIC_BACKEND_URL; // replace with your backend URL
+  const backendURL = process.env.NEXT_PUBLIC_BACKEND_URL;
 
-  // Fetch all blogs
   const fetchBlogs = async () => {
     try {
       const res = await axios.get(`${backendURL}/getBlog`);
@@ -29,7 +28,6 @@ const BlogManager = () => {
     fetchBlogs();
   }, []);
 
-  // Preview selected file
   const handleFileChange = (e) => {
     const file = e.target.files[0];
     setMedia(file);
@@ -43,7 +41,6 @@ const BlogManager = () => {
     }
   };
 
-  // Handle blog submission
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!title || !description || !media) return alert("All fields are required");
@@ -63,7 +60,6 @@ const BlogManager = () => {
         },
       });
 
-      // Reset form
       setTitle("");
       setDescription("");
       setMedia(null);
@@ -71,7 +67,7 @@ const BlogManager = () => {
       setUploadProgress(0);
       setLoading(false);
 
-      fetchBlogs(); // refresh blog list
+      fetchBlogs();
       alert("Blog uploaded successfully!");
     } catch (err) {
       console.error(err);
@@ -80,7 +76,6 @@ const BlogManager = () => {
     }
   };
 
-  // Handle blog deletion
   const handleDelete = async (id) => {
     if (!confirm("Are you sure you want to delete this blog?")) return;
     try {
@@ -93,40 +88,50 @@ const BlogManager = () => {
   };
 
   return (
-    <div className="p-6 max-w-4xl mx-auto text-black">
-      <h2 className="text-2xl font-bold mb-4 text-white">Create a Blog</h2>
-      <form className="flex flex-col gap-4 mb-8" onSubmit={handleSubmit}>
+    <div className="p-6 w-[100vw] mx-auto bg-glacier-light rounded-lg shadow-lg text-white">
+      {/* Title */}
+      <h2 className="text-3xl font-bold mb-6 text-center text-glacier-dark">
+        Create a Blog
+      </h2>
+
+      {/* Form */}
+      <form className="flex flex-col gap-4 mb-10" onSubmit={handleSubmit}>
         <input
           type="text"
           placeholder="Title"
-          className="border p-2 rounded"
+          className="border border-glacier-soft p-3 rounded-lg bg-glacier-light text-glacier-dark placeholder-glacier-dark focus:outline-none focus:ring-2 focus:ring-glacier-primary"
           value={title}
           onChange={(e) => setTitle(e.target.value)}
         />
         <textarea
           placeholder="Description"
-          className="border p-2 rounded"
+          className="border border-glacier-soft p-3 rounded-lg bg-glacier-light text-glacier-dark placeholder-glacier-dark focus:outline-none focus:ring-2 focus:ring-glacier-primary"
           value={description}
           onChange={(e) => setDescription(e.target.value)}
         />
-        <input type="file" accept="image/*,video/*" onChange={handleFileChange} />
+        <input
+          type="file"
+          accept="image/*,video/*"
+          onChange={handleFileChange}
+          className="text-glacier-dark"
+        />
 
         {/* Preview */}
         {preview && media && (
-          <div className="mb-2">
+          <div className="mb-2 flex justify-center">
             {media.type.startsWith("image") ? (
-              <img src={preview} alt="preview" className="w-64 rounded" />
+              <img src={preview} alt="preview" className="w-64 rounded-lg border border-glacier-soft" />
             ) : (
-              <video src={preview} controls className="w-64 rounded"></video>
+              <video src={preview} controls className="w-64 rounded-lg border border-glacier-soft"></video>
             )}
           </div>
         )}
 
         {/* Upload Progress */}
         {loading && (
-          <div className="w-full bg-gray-200 rounded h-2 mb-2">
+          <div className="w-full bg-glacier-light rounded-full h-2 mb-2">
             <div
-              className="bg-blue-500 h-2 rounded"
+              className="bg-glacier-primary h-2 rounded-full"
               style={{ width: `${uploadProgress}%` }}
             ></div>
           </div>
@@ -134,30 +139,33 @@ const BlogManager = () => {
 
         <button
           type="submit"
-          className="bg-blue-600 text-white py-2 px-4 rounded hover:bg-blue-700"
+          className="bg-glacier-primary  text-white py-3 rounded-lg font-semibold transition-colors disabled:opacity-50"
           disabled={loading}
         >
           {loading ? "Uploading..." : "Upload Blog"}
         </button>
       </form>
 
-      <h2 className="text-2xl font-bold mb-4 text-white">All Blogs</h2>
-      {blogs.length === 0 && <p className="text-white">No blogs available.</p>}
+      {/* All Blogs */}
+      <h2 className="text-3xl font-bold mb-6  text-center">
+        All Blogs
+      </h2>
+      {blogs.length === 0 && <p className="text-center text-glacier-soft">No blogs available.</p>}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {blogs.map((blog) => (
-          <div key={blog._id} className="border p-4 rounded relative bg-white">
+          <div key={blog._id} className="border border-glacier-soft p-4 rounded-lg relative bg-glacier-light text-glacier-dark shadow-md hover:shadow-xl transition-shadow">
             <button
-              className="absolute top-2 right-2 text-red-600 hover:text-red-800"
+              className="absolute top-2 right-2 text-glacier-accent hover:text-red-600"
               onClick={() => handleDelete(blog._id)}
             >
               <FiTrash2 size={20} />
             </button>
-            <h3 className="font-bold text-lg mb-2">{blog.title}</h3>
+            <h3 className="font-bold text-xl mb-2">{blog.title}</h3>
             <p className="mb-2">{blog.description}</p>
             {blog.mediaType === "image" ? (
-              <img src={blog.mediaUrl} alt={blog.title} className="w-full rounded" />
+              <img src={blog.mediaUrl} alt={blog.title} className="w-full rounded-lg" />
             ) : (
-              <video src={blog.mediaUrl} controls className="w-full rounded"></video>
+              <video src={blog.mediaUrl} controls className="w-full rounded-lg"></video>
             )}
           </div>
         ))}
