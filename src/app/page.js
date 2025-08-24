@@ -1,113 +1,169 @@
-import Image from "next/image";
+"use client";
 
-export default function Home() {
+import { useState, useEffect } from "react";
+import axios from "axios";
+import { FiTrash2 } from "react-icons/fi";
+
+const BlogManager = () => {
+  const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
+  const [media, setMedia] = useState(null);
+  const [preview, setPreview] = useState(null); // For preview before upload
+  const [blogs, setBlogs] = useState([]);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [loading, setLoading] = useState(false);
+
+  const backendURL = process.env.NEXT_PUBLIC_BACKEND_URL; // replace with your backend URL
+
+  // Fetch all blogs
+  const fetchBlogs = async () => {
+    try {
+      const res = await axios.get(`${backendURL}/getBlog`);
+      setBlogs(res.data.blogs);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  useEffect(() => {
+    fetchBlogs();
+  }, []);
+
+  // Preview selected file
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    setMedia(file);
+
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = () => setPreview(reader.result);
+      reader.readAsDataURL(file);
+    } else {
+      setPreview(null);
+    }
+  };
+
+  // Handle blog submission
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!title || !description || !media) return alert("All fields are required");
+
+    const formData = new FormData();
+    formData.append("title", title);
+    formData.append("description", description);
+    formData.append("media", media);
+
+    try {
+      setLoading(true);
+      await axios.post(`${backendURL}/storeBlog`, formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+        onUploadProgress: (progressEvent) => {
+          const percent = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+          setUploadProgress(percent);
+        },
+      });
+
+      // Reset form
+      setTitle("");
+      setDescription("");
+      setMedia(null);
+      setPreview(null);
+      setUploadProgress(0);
+      setLoading(false);
+
+      fetchBlogs(); // refresh blog list
+      alert("Blog uploaded successfully!");
+    } catch (err) {
+      console.error(err);
+      setLoading(false);
+      alert("Failed to upload blog");
+    }
+  };
+
+  // Handle blog deletion
+  const handleDelete = async (id) => {
+    if (!confirm("Are you sure you want to delete this blog?")) return;
+    try {
+      await axios.delete(`${backendURL}/deleteBlog/${id}`);
+      fetchBlogs();
+    } catch (err) {
+      console.error(err);
+      alert("Failed to delete blog");
+    }
+  };
+
   return (
-    <main className="flex min-h-screen flex-col items-center justify-between p-24">
-      <div className="z-10 max-w-5xl w-full items-center justify-between font-mono text-sm lg:flex">
-        <p className="fixed left-0 top-0 flex w-full justify-center border-b border-gray-300 bg-gradient-to-b from-zinc-200 pb-6 pt-8 backdrop-blur-2xl dark:border-neutral-800 dark:bg-zinc-800/30 dark:from-inherit lg:static lg:w-auto  lg:rounded-xl lg:border lg:bg-gray-200 lg:p-4 lg:dark:bg-zinc-800/30">
-          Get started by editing&nbsp;
-          <code className="font-mono font-bold">src/app/page.js</code>
-        </p>
-        <div className="fixed bottom-0 left-0 flex h-48 w-full items-end justify-center bg-gradient-to-t from-white via-white dark:from-black dark:via-black lg:static lg:h-auto lg:w-auto lg:bg-none">
-          <a
-            className="pointer-events-none flex place-items-center gap-2 p-8 lg:pointer-events-auto lg:p-0"
-            href="https://vercel.com?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            By{" "}
-            <Image
-              src="/vercel.svg"
-              alt="Vercel Logo"
-              className="dark:invert"
-              width={100}
-              height={24}
-              priority
-            />
-          </a>
-        </div>
-      </div>
-
-      <div className="relative flex place-items-center before:absolute before:h-[300px] before:w-full sm:before:w-[480px] before:-translate-x-1/2 before:rounded-full before:bg-gradient-radial before:from-white before:to-transparent before:blur-2xl before:content-[''] after:absolute after:-z-20 after:h-[180px] after:w-full sm:after:w-[240px] after:translate-x-1/3 after:bg-gradient-conic after:from-sky-200 after:via-blue-200 after:blur-2xl after:content-[''] before:dark:bg-gradient-to-br before:dark:from-transparent before:dark:to-blue-700 before:dark:opacity-10 after:dark:from-sky-900 after:dark:via-[#0141ff] after:dark:opacity-40 before:lg:h-[360px] z-[-1]">
-        <Image
-          className="relative dark:drop-shadow-[0_0_0.3rem_#ffffff70] dark:invert"
-          src="/next.svg"
-          alt="Next.js Logo"
-          width={180}
-          height={37}
-          priority
+    <div className="p-6 max-w-4xl mx-auto text-black">
+      <h2 className="text-2xl font-bold mb-4 text-white">Create a Blog</h2>
+      <form className="flex flex-col gap-4 mb-8" onSubmit={handleSubmit}>
+        <input
+          type="text"
+          placeholder="Title"
+          className="border p-2 rounded"
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
         />
+        <textarea
+          placeholder="Description"
+          className="border p-2 rounded"
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+        />
+        <input type="file" accept="image/*,video/*" onChange={handleFileChange} />
+
+        {/* Preview */}
+        {preview && media && (
+          <div className="mb-2">
+            {media.type.startsWith("image") ? (
+              <img src={preview} alt="preview" className="w-64 rounded" />
+            ) : (
+              <video src={preview} controls className="w-64 rounded"></video>
+            )}
+          </div>
+        )}
+
+        {/* Upload Progress */}
+        {loading && (
+          <div className="w-full bg-gray-200 rounded h-2 mb-2">
+            <div
+              className="bg-blue-500 h-2 rounded"
+              style={{ width: `${uploadProgress}%` }}
+            ></div>
+          </div>
+        )}
+
+        <button
+          type="submit"
+          className="bg-blue-600 text-white py-2 px-4 rounded hover:bg-blue-700"
+          disabled={loading}
+        >
+          {loading ? "Uploading..." : "Upload Blog"}
+        </button>
+      </form>
+
+      <h2 className="text-2xl font-bold mb-4 text-white">All Blogs</h2>
+      {blogs.length === 0 && <p className="text-white">No blogs available.</p>}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {blogs.map((blog) => (
+          <div key={blog._id} className="border p-4 rounded relative bg-white">
+            <button
+              className="absolute top-2 right-2 text-red-600 hover:text-red-800"
+              onClick={() => handleDelete(blog._id)}
+            >
+              <FiTrash2 size={20} />
+            </button>
+            <h3 className="font-bold text-lg mb-2">{blog.title}</h3>
+            <p className="mb-2">{blog.description}</p>
+            {blog.mediaType === "image" ? (
+              <img src={blog.mediaUrl} alt={blog.title} className="w-full rounded" />
+            ) : (
+              <video src={blog.mediaUrl} controls className="w-full rounded"></video>
+            )}
+          </div>
+        ))}
       </div>
-
-      <div className="mb-32 grid text-center lg:max-w-5xl lg:w-full lg:mb-0 lg:grid-cols-4 lg:text-left">
-        <a
-          href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className={`mb-3 text-2xl font-semibold`}>
-            Docs{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className={`m-0 max-w-[30ch] text-sm opacity-50`}>
-            Find in-depth information about Next.js features and API.
-          </p>
-        </a>
-
-        <a
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800 hover:dark:bg-opacity-30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className={`mb-3 text-2xl font-semibold`}>
-            Learn{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className={`m-0 max-w-[30ch] text-sm opacity-50`}>
-            Learn about Next.js in an interactive course with&nbsp;quizzes!
-          </p>
-        </a>
-
-        <a
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className={`mb-3 text-2xl font-semibold`}>
-            Templates{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className={`m-0 max-w-[30ch] text-sm opacity-50`}>
-            Explore starter templates for Next.js.
-          </p>
-        </a>
-
-        <a
-          href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className={`mb-3 text-2xl font-semibold`}>
-            Deploy{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className={`m-0 max-w-[30ch] text-sm opacity-50 text-balance`}>
-            Instantly deploy your Next.js site to a shareable URL with Vercel.
-          </p>
-        </a>
-      </div>
-    </main>
+    </div>
   );
-}
+};
+
+export default BlogManager;
