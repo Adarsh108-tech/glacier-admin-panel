@@ -161,7 +161,7 @@ const BlogManager = () => {
               <FiTrash2 size={20} />
             </button>
             <h3 className="font-bold text-xl mb-2">{blog.title}</h3>
-            <p className="mb-2">{blog.description}</p>
+            <p className="mb-2 whitespace-pre-wrap">{blog.description}</p>
             {blog.mediaType === "image" ? (
               <img src={blog.mediaUrl} alt={blog.title} className="w-full rounded-lg" />
             ) : (
