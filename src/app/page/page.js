@@ -99,13 +99,13 @@ const BlogManager = () => {
         <input
           type="text"
           placeholder="Title"
-          className="border border-glacier-soft p-3 rounded-lg bg-glacier-light text-glacier-dark placeholder-glacier-dark focus:outline-none focus:ring-2 focus:ring-glacier-primary"
+          className="border whitespace-pre-wrap border-glacier-soft p-3 rounded-lg bg-glacier-light text-glacier-dark placeholder-glacier-dark focus:outline-none focus:ring-2 focus:ring-glacier-primary"
           value={title}
           onChange={(e) => setTitle(e.target.value)}
         />
         <textarea
           placeholder="Description"
-          className="border border-glacier-soft p-3 rounded-lg bg-glacier-light text-glacier-dark placeholder-glacier-dark focus:outline-none focus:ring-2 focus:ring-glacier-primary"
+          className="border whitespace-pre-wrap border-glacier-soft p-3 rounded-lg bg-glacier-light text-glacier-dark placeholder-glacier-dark focus:outline-none focus:ring-2 focus:ring-glacier-primary"
           value={description}
           onChange={(e) => setDescription(e.target.value)}
         />
